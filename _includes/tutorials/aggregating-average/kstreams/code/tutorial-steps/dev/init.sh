@@ -1,1 +1,1 @@
-mkdir kstreams-average && cd kstreams-average
+mkdir aggregating-average && cd aggregating-average

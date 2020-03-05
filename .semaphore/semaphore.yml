@@ -168,4 +168,4 @@ blocks:
 
         - name: KStreams Running Average tests
           commands:
-            - make -C _includes/tutorials/kstreams-average/kstreams/code tutorial
+            - make -C _includes/tutorials/aggregating-average/kstreams/code tutorial

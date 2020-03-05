@@ -20,12 +20,8 @@ targetCompatibility = "1.8"
 version = "0.0.1"
 
 repositories {
-    mavenCentral()
     jcenter()
-
-    maven {
-        url "http://packages.confluent.io/maven"
-    }
+    maven { url 'http://packages.confluent.io/maven/' }
 }
 
 apply plugin: "com.commercehub.gradle.plugin.avro"
@@ -36,9 +32,14 @@ dependencies {
     implementation "org.slf4j:slf4j-simple:1.7.26"
     implementation "org.apache.kafka:kafka-streams:2.4.0"
     implementation "io.confluent:kafka-streams-avro-serde:5.4.0"
+
+    compile group: 'com.typesafe', name: 'config', version: '1.4.0'
     testCompile "org.apache.kafka:kafka-streams-test-utils:2.4.0"
     testCompile "junit:junit:4.12"
     testImplementation 'org.hamcrest:hamcrest:2.2'
+
+    testCompileOnly "org.projectlombok:lombok:1.18.12"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.12"
 }
 
 test {
@@ -59,5 +60,5 @@ jar {
 }
 
 shadowJar {
-    archiveName = "kstreams-average-standalone-${version}.${extension}"
+    archiveName = "aggregating-average-standalone-${version}.${extension}"
 }

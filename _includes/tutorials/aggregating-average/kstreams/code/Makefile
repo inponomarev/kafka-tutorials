@@ -5,5 +5,5 @@ TEMP_DIR := $(shell mktemp -d)
 tutorial:
 	rm -r $(DEV_OUTPUTS_DIR) || true
 	mkdir $(DEV_OUTPUTS_DIR)
-	harness-runner ../../../../../_data/harnesses/kstreams-average/kstreams.yml $(TEMP_DIR)
+	harness-runner ../../../../../_data/harnesses/aggregating-average/kstreams.yml $(TEMP_DIR)
 	diff --strip-trailing-cr $(STEPS_DIR)/dev/expected-outputs.json $(DEV_OUTPUTS_DIR)/acutal-outputs.json
