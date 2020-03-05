@@ -10,7 +10,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
@@ -39,9 +38,13 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.kafka.common.serialization.Serdes.Double;
 import static org.apache.kafka.common.serialization.Serdes.Long;
+import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
+import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.COMMIT_INTERVAL_MS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CONSUMER_PREFIX;
+import static org.apache.kafka.streams.StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG;
+import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.PRODUCER_PREFIX;
 import static org.apache.kafka.streams.StreamsConfig.REPLICATION_FACTOR_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.producerPrefix;
@@ -54,21 +57,15 @@ public class RunningAverage {
     Properties config = new Properties();
     config.putAll(envProps);
 
-    config.put(StreamsConfig.APPLICATION_ID_CONFIG, envProps.get("application.id"));
-    config.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, envProps.getProperty("bootstrap.servers"));
-    config.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Long().getClass());
-    config.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Double().getClass());
+    config.put(APPLICATION_ID_CONFIG, envProps.get("application.id"));
+    config.put(BOOTSTRAP_SERVERS_CONFIG, envProps.getProperty("bootstrap.servers"));
+    config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Long().getClass());
+    config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Double().getClass());
     config.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty("schema.registry.url"));
     config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
 
     config.put(REPLICATION_FACTOR_CONFIG, envProps.getProperty("default.topic.replication.factor"));
-
-    config.put(PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
-               "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
-
-    config.put(CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-               "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor");
-
+    
     config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, envProps.getProperty("offset.reset.policy"));
 
     // config.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
@@ -106,7 +103,7 @@ public class RunningAverage {
         envProps.getProperty("input.ratings.topic.name"),
         parseInt(envProps.getProperty("input.ratings.topic.partitions")),
         parseShort(envProps.getProperty("input.ratings.topic.replication.factor"))));
-    
+
     topics.add(new NewTopic(
         envProps.getProperty("output.rating-averages.topic.name"),
         parseInt(envProps.getProperty("output.rating-averages.topic.partitions")),
@@ -118,7 +115,7 @@ public class RunningAverage {
   }
   //endregion
 
-  private void run(String configPath) {
+  private void run() {
 
     Properties envProps = this.loadEnvProperties();
     Properties streamProps = this.buildStreamsProperties(envProps);
@@ -200,7 +197,7 @@ public class RunningAverage {
     serde.configure(getSerdeConfig(envProps), false);
     return serde;
   }
-  
+
   protected static Map<String, String> getSerdeConfig(Properties config) {
     final String srUserInfoPropertyName = "schema.registry.basic.auth.user.info";
     final HashMap<String, String> map = new HashMap<>();
@@ -221,9 +218,9 @@ public class RunningAverage {
         .stream()
         // ignore java.* and system properties
         .filter(entry -> Stream
-            .of("java", "user", "sun", "os", "http", "ftp", "line", "file", "awt", "gother", "socks", "path")
+            .of("java", "user", "sun", "os", "http", "ftp", "line", "file", "awt", "gopher", "socks", "path")
             .noneMatch(s -> entry.getKey().startsWith(s)))
-        .peek(filteredEntry -> System.out.println(filteredEntry.getKey() + " : " + filteredEntry.getValue()))
+        .peek(filteredEntry -> System.out.println(filteredEntry.getKey() + " : " + filteredEntry.getValue().unwrapped()))
         .collect(toMap(Map.Entry::getKey, y -> y.getValue().unwrapped()));
     Properties props = new Properties();
     props.putAll(map);
@@ -231,12 +228,7 @@ public class RunningAverage {
   }
 
   public static void main(String[] args) {
-    if (args.length < 1) {
-      throw new IllegalArgumentException(
-          "🙀 This program takes one argument: the path to an environment configuration file.");
-    }
-
-    new RunningAverage().run(args[0]);
+    new RunningAverage().run();
   }
 
 
