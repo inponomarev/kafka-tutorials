@@ -42,10 +42,8 @@ import static org.apache.kafka.streams.StreamsConfig.APPLICATION_ID_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.COMMIT_INTERVAL_MS_CONFIG;
-import static org.apache.kafka.streams.StreamsConfig.CONSUMER_PREFIX;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
-import static org.apache.kafka.streams.StreamsConfig.PRODUCER_PREFIX;
 import static org.apache.kafka.streams.StreamsConfig.REPLICATION_FACTOR_CONFIG;
 import static org.apache.kafka.streams.StreamsConfig.producerPrefix;
 import static org.apache.kafka.streams.StreamsConfig.topicPrefix;
@@ -62,7 +60,6 @@ public class RunningAverage {
     config.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Long().getClass());
     config.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Double().getClass());
     config.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, envProps.getProperty("schema.registry.url"));
-    config.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
 
     config.put(REPLICATION_FACTOR_CONFIG, envProps.getProperty("default.topic.replication.factor"));
     

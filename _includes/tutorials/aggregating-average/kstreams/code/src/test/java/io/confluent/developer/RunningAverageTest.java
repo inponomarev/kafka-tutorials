@@ -27,7 +27,6 @@ import io.confluent.demo.CountAndSum;
 import io.confluent.demo.Rating;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,40 +40,41 @@ public class RunningAverageTest {
   private static final String RATINGS_TOPIC_NAME = "ratings";
   private static final String AVERAGE_RATINGS_TOPIC_NAME = "average-ratings";
   private static final Rating LETHAL_WEAPON_RATING_10 = new Rating(362L, 10.0);
-  // private static final Rating LETHAL_WEAPON_RATING_9 = new Rating(362L,9.0);
   private static final Rating LETHAL_WEAPON_RATING_8 = new Rating(362L, 8.0);
+
   private TopologyTestDriver testDriver;
   private SpecificAvroSerde<Rating> ratingSpecificAvroSerde;
 
   @Before
   public void setUp() throws IOException, RestClientException {
 
-    final Properties properties = new Properties();
-    properties.put("application.id", "kafka-movies-test");
-    properties.put("bootstrap.servers", "DUMMY_KAFKA_CONFLUENT_CLOUD_9092");
-    properties.put("schema.registry.url", "DUMMY_SR_CONFLUENT_CLOUD_8080");
-    properties.put("default.topic.replication.factor", "1");
-    properties.put("offset.reset.policy", "latest");
+    final Properties mockProps = new Properties();
+    mockProps.put("application.id", "kafka-movies-test");
+    mockProps.put("bootstrap.servers", "DUMMY_KAFKA_CONFLUENT_CLOUD_9092");
+    mockProps.put("schema.registry.url", "DUMMY_SR_CONFLUENT_CLOUD_8080");
+    mockProps.put("default.topic.replication.factor", "1");
+    mockProps.put("offset.reset.policy", "latest");
+    mockProps.put("specific.avro.reader", true);
 
     final RunningAverage streamsApp = new RunningAverage();
-    final Properties streamsConfig = streamsApp.buildStreamsProperties(properties);
+    final Properties streamsConfig = streamsApp.buildStreamsProperties(mockProps);
 
     StreamsBuilder builder = new StreamsBuilder();
 
-    final Map<String, String> mockSerdeConfig = RunningAverage.getSerdeConfig(properties);
+    final Map<String, String> mockSerdeConfig = RunningAverage.getSerdeConfig(streamsConfig);
 
     SpecificAvroSerde<CountAndSum> countAndSumSerde = new SpecificAvroSerde<>(new MockSchemaRegistryClient());
     countAndSumSerde.configure(mockSerdeConfig, false);
 
     // MockSchemaRegistryClient doesn't require connection to Schema Registry which is perfect for unit test
     final MockSchemaRegistryClient client = new MockSchemaRegistryClient();
-    client.register(RATINGS_TOPIC_NAME + "-value", Rating.SCHEMA$);
     ratingSpecificAvroSerde = new SpecificAvroSerde<>(client);
+    client.register(RATINGS_TOPIC_NAME + "-value", Rating.SCHEMA$);
     countAndSumSerde.configure(mockSerdeConfig, false);
 
-    KStream<Long, Rating>
-        ratingStream =
-        builder.stream(RATINGS_TOPIC_NAME, Consumed.with(Serdes.Long(), ratingSpecificAvroSerde));
+    KStream<Long, Rating> ratingStream = builder.stream(RATINGS_TOPIC_NAME,
+                                                        Consumed.with(Serdes.Long(), ratingSpecificAvroSerde));
+    
     final KTable<Long, Double> ratingAverageTable = RunningAverage.getRatingAverageTable(ratingStream,
                                                                                          AVERAGE_RATINGS_TOPIC_NAME,
                                                                                          countAndSumSerde);
